@@ -31,7 +31,7 @@ def cria_matriz(n_linhas, n_colunas, valor):
         linha = [] # lista vazia
         for j in range(n_colunas):
             linha.append(valor)
-        # coloca linha na matriz
+        # coloque linha na matriz
         matriz.append(linha)
 
     return matriz
@@ -40,7 +40,7 @@ def cria_matriz(n_linhas, n_colunas, valor):
 t = cria_matriz(var.idLugar,var.qtdPortas,0)
 td = cria_matriz(var.idLugar,var.qtdPortas,0)
 rp = PetriNet("RP_Mapa")
-rp.add_place(Place("p%s"%var.idLugar, [dot]))
+rp.add_place(Place("p%s"%var.idLugar,1))
 t.append([]) #insere linha referente ao lugar inicial p0
 td.append([]) #insere linha referente ao lugar inicial p0
 
@@ -53,7 +53,7 @@ while(1):
     p.clear()
     for i in range(var.qtdPortas):
         p.append(str(input("Digite o id da porta %d do lugar atual P%d: " %(i+1, var.idLugarA))))       
-    print("p: ", p)
+    #print("p: ", p)
     for i in range(len(p)):
         if p[i] != var.idPe:
             var.idLugar += 1
@@ -65,19 +65,19 @@ while(1):
             lugAnt.append(var.idLugarA)
 
             #Cria uma transição para cada porta   
-            rp.add_transition(Transition("t%s%s"%(var.idLugarA,var.idLugar)))
-            rp.add_input("p%s"%var.idLugarA,"t%s%s"%(var.idLugarA,var.idLugar), Value(1))#Arco de entrada 
-            rp.add_output("p%s"%var.idLugar,"t%s%s"%(var.idLugarA,var.idLugar), Value(1))#Arco de saída
+            rp.add_transition(Transition("t%s%s"%(var.idLugarA,var.idLugar),Expression('x>0')))
+            rp.add_input("p%s"%var.idLugarA,"t%s%s"%(var.idLugarA,var.idLugar), Variable('x'))#Arco de entrada 
+            rp.add_output("p%s"%var.idLugar,"t%s%s"%(var.idLugarA,var.idLugar), Expression('x*1'))#Arco de saída
 
             #Armazena as transições criadas na linha[lugar atual] de uma matriz t[]
             t[var.idLugarA].insert(i,'t%s%s'%(var.idLugarA,var.idLugar))
         else:
 
             #Primeira transição, ou seja, porta que volta para o lugar anterior   
-            print("Lugar Anterior: ", lugAnt)
-            rp.add_transition(Transition("t%s%s"%(var.idLugarA,lugAnt[var.idLugarA])))
-            rp.add_input("p%s"%var.idLugarA,"t%s%s"%(var.idLugarA,lugAnt[var.idLugarA]), Value(1))#Arco de entrada 
-            rp.add_output("p%s"%lugAnt[var.idLugarA],"t%s%s"%(var.idLugarA,lugAnt[var.idLugarA]), Value(1))#Arco de saída            
+            #print("Lugar Anterior: ", lugAnt)
+            rp.add_transition(Transition("t%s%s"%(var.idLugarA,lugAnt[var.idLugarA]),Expression('x>0')))
+            rp.add_input("p%s"%var.idLugarA,"t%s%s"%(var.idLugarA,lugAnt[var.idLugarA]), Variable('x'))#Arco de entrada 
+            rp.add_output("p%s"%lugAnt[var.idLugarA],"t%s%s"%(var.idLugarA,lugAnt[var.idLugarA]), Expression('x*1'))#Arco de saída            
 
             #Armazena a transição que volta para o lugar anterior na linha[lugar atual] de t[]
             t[var.idLugarA].insert(0,'t%s%s'%(var.idLugarA,lugAnt[var.idLugarA]))
@@ -94,6 +94,11 @@ while(1):
             #Dispara t[var.idLugarA] existente
             var.c = t[var.idLugarA][0]
             print("Lugar p%s MAPEADO. Dispara transição %s" %(var.idLugarA, t[var.idLugarA][0]))
+            rp.transition("%s"%t[var.idLugarA][0]).fire(Substitution(x=1))
+            rp.draw("Mapa.png")
+            imagem = cv2.imread("Mapa.png")
+            cv2.imshow("Mapa.png", imagem)
+            cv2.waitKey()                                #mantem janela aberta e código em pausa até que uma tecla seja pressionada
         else:
 
             #Dispara próxima transição da linha atual
@@ -104,17 +109,18 @@ while(1):
                     else:
                         var.c = t[var.idLugarA][i]
                         print("Dispara transição: ", t[var.idLugarA][i])
-                        #rp.transition(t[var.idLugarA][i]).modes()
-                        #print (rp.transition(t[var.idLugarA][i]).modes())
-                        #rp.transition(t[var.idLugarA][i]).fire([])
-                        #rp.place("p%s"%var.idLugar,).tokens
+                        rp.transition("%s"%t[var.idLugarA][i]).fire(Substitution(x=1))
+                        rp.draw("Mapa.png")
+                        imagem = cv2.imread("Mapa.png")
+                        cv2.imshow("Mapa.png", imagem)
+                        cv2.waitKey()                                #mantem janela aberta e código em pausa até que uma tecla seja pressionada
                         break
                     
         #Aualiza td, idPe e var.idLugarA
         td[var.idLugarA].append(var.c)
         var.idPe = str("t%s%s" %(var.c[2],var.c[1]))
         var.idLugarA = int(var.c[2])
-        print ("idPe: %s. Lugar Atual: p%s. Matriz t: %s e td: %s" %(var.idPe, var.idLugarA, t, td))
+        #print ("idPe: %s. Lugar Atual: p%s. Matriz t: %s e td: %s" %(var.idPe, var.idLugarA, t, td))
 
         if var.idLugarA in lv:
             if var.idLugarA == 0:
